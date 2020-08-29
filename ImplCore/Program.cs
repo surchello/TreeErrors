@@ -1,4 +1,5 @@
-﻿using ImplCore.Input;
+﻿using ImplCore.General;
+using ImplCore.Input;
 using ImplCore.Output;
 using ImplCore.Tree;
 using System;
@@ -30,24 +31,37 @@ namespace ImplCore
             try
             {
                 var parseResult = new InputParser().Parse(input);
-                if (parseResult.IsError)
+                if (!parseResult.IsSuccess)
                 {
-                    new ErrorPrinter().Print(General.ErrorCode.InvalidInput);
+                    PrintError(parseResult.ErrorCode);
                     return;
                 }
 
-                var inputKeeper = InputKeeper.Create(parseResult.Value!);
-                var treeResult = new TreeBuilder().Build(inputKeeper);
+                var inputKeeperResult = InputKeeper.Create(parseResult.Result!);
+                if (!inputKeeperResult.IsSuccess)
+                {
+                    PrintError(inputKeeperResult.ErrorCode);
+                    return;
+                }
 
-                var printResult = new TreePrinter().ToSExpression(treeResult);
+                var treeResult = new TreeBuilder().Build(inputKeeperResult.Result!);
+                if (!treeResult.IsSuccess)
+                {
+                    PrintError(treeResult.ErrorCode);
+                    return;
+                }
+
+                string printResult = new TreePrinter().ToSExpression(treeResult.Result!);
 
                 Console.WriteLine(printResult);
-                Console.WriteLine(new TreePrinter().ToSExpressionIterative(treeResult));
+                Console.WriteLine(new TreePrinter().ToSExpressionIterative(treeResult.Result!));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception: {ex}");
             }
         }
+
+        static void PrintError(ErrorCode errorCode) => new ErrorPrinter().Print(errorCode);
     }
 }

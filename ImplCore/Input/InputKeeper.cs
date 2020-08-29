@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImplCore.General;
+using ImplCore.Tree;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -7,65 +8,60 @@ namespace ImplCore.Input
 {
     internal class InputKeeper : IInputKeeper
     {
-        private Dictionary<char, char> firstChilds;
-        private Dictionary<char, char> secondChilds;
+        private Dictionary<char, char> firstChildren;
+        private Dictionary<char, char> secondChildren;
         private Dictionary<char, char> primaryParents;
         private Dictionary<char, IList<char>> additionalParents;
 
-        private InputKeeper(Dictionary<char, char> firstChilds,
-            Dictionary<char, char> secondChilds,
+        private InputKeeper(Dictionary<char, char> firstChildren,
+            Dictionary<char, char> secondChildren,
             Dictionary<char, char> primaryParents,
             Dictionary<char, IList<char>> additionalParents)
         {
-            this.firstChilds = firstChilds;
-            this.secondChilds = secondChilds;
+            this.firstChildren = firstChildren;
+            this.secondChildren = secondChildren;
             this.primaryParents = primaryParents;
             this.additionalParents = additionalParents;
     }
 
-        public static InputKeeper Create(IEnumerable<InputItem> inputItems)
+        public static OperationResult<InputKeeper> Create(IEnumerable<InputItem> inputItems)
         {
-            //TODO: validate params not null(add Guard)
-            var firstChilds = new Dictionary<char, char>();
-            var secondChilds = new Dictionary<char, char>();
+            var firstChildren = new Dictionary<char, char>();
+            var secondChildren = new Dictionary<char, char>();
 
             var primaryParents = new Dictionary<char, char>();
             var additionalParents = new Dictionary<char, IList<char>>();
 
             foreach (var inputItem in inputItems)
             {
-                if (TryAddChild(firstChilds, inputItem))
+                ErrorCode? addResult = AddChild(firstChildren, secondChildren, inputItem);
+                if (addResult.HasValue)
                 {
-                    AddParent(primaryParents, additionalParents, inputItem);
-                    continue;
+                    return OperationResult<InputKeeper>.Error(addResult.Value);
                 }
 
-                if (TryAddChild(secondChilds, inputItem))
-                {
-                    AddParent(primaryParents, additionalParents, inputItem);
-                    continue;
-                }
-
-                throw new Exception("more than two childs");
+                AddParent(primaryParents, additionalParents, inputItem);
             }
 
-            return new InputKeeper(firstChilds, secondChilds, primaryParents, additionalParents);
+            var inputKeeper = new InputKeeper(firstChildren, secondChildren, primaryParents, additionalParents);
+
+            return OperationResult<InputKeeper>.Success(inputKeeper);
         }
 
         public InputItem? GetFirstItem()
         {
-            if (!firstChilds.Any())
+            if (!firstChildren.Any())
             {
                 return null;
             }
 
-            var firstInput = firstChilds.First();
+            var firstInput = firstChildren.First();
             return new InputItem(firstInput.Key, firstInput.Value);
         }
 
-        public bool TryGetFirstChild(char parent, out char child) => firstChilds.TryGetValue(parent, out child);
+        public bool TryGetFirstChild(char parent, out char child) => firstChildren.TryGetValue(parent, out child);
 
-        public bool TryGetSecondChild(char parent, out char child) => secondChilds.TryGetValue(parent, out child);
+        public bool TryGetSecondChild(char parent, out char child) => secondChildren.TryGetValue(parent, out child);
 
         public bool TryGetPrimaryParent(char child, out char parent) => primaryParents.TryGetValue(child, out parent);
         
@@ -81,20 +77,49 @@ namespace ImplCore.Input
             return false;
         }
 
-        private static bool TryAddChild(Dictionary<char, char> childs, InputItem inputItem)
+        private static ErrorCode? AddChild(Dictionary<char, char> firstChildren,
+            Dictionary<char, char> secondChildren,
+            InputItem inputItem)
         {
-            if (!childs.TryGetValue(inputItem.Parent, out char firstChild))
+            AddItemResult addResult = AddChild(firstChildren, inputItem);
+            if (addResult.IsAdded)
             {
-                childs.Add(inputItem.Parent, inputItem.Child);
-                return true;
+                return null;
             }
 
-            if (firstChild == inputItem.Child)
+            if (addResult.ErrorCode.HasValue)
             {
-                throw new Exception("duplicate pair");
+                return addResult.ErrorCode.Value;
             }
 
-            return false;//TODO: return false or error
+            addResult = AddChild(secondChildren, inputItem);
+            if (addResult.IsAdded)
+            {
+                return null;
+            }
+
+            if (addResult.ErrorCode.HasValue)
+            {
+                return addResult.ErrorCode.Value;
+            }
+
+            return ErrorCode.TooManyChildren;
+        }
+
+        private static AddItemResult AddChild(Dictionary<char, char> children, InputItem inputItem)
+        {
+            if (!children.TryGetValue(inputItem.Parent, out char existingChild))
+            {
+                children.Add(inputItem.Parent, inputItem.Child);
+                return AddItemResult.Added();
+            }
+
+            if (existingChild == inputItem.Child)
+            {
+                return AddItemResult.Error(ErrorCode.DuplicatePair);
+            }
+
+            return AddItemResult.NotAdded();
         }
 
         private static void AddParent(Dictionary<char, char> primaryParents,

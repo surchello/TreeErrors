@@ -1,37 +1,52 @@
-﻿using System;
+﻿using ImplCore.General;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ImplCore.Tree
 {
-    internal class OperationResult<T>
+    public class OperationResult<T>
     {
         [AllowNull]
         private readonly T result;
-        
+        private readonly ErrorCode? errorCode;
+
         [MaybeNull]
         public T Result
         {
             get
             {
-                if (IsError)
+                if (!IsSuccess)
                 {
-                    throw new Exception($"Failed to return a result since there is an error.");
+                    throw new Exception($"Failed to return a result since there is an error: {ErrorCode}.");
                 }
 
                 return result;
             }
         }
 
-        public bool IsError { get; }
-
-        private OperationResult([AllowNull]T result, bool isError)
+        public ErrorCode ErrorCode
         {
-            this.result = result;
-            IsError = isError;
+            get
+            {
+                if (!IsSuccess)
+                {
+                    throw new Exception($"Failed to return errorCode since there is no error.");
+                }
+
+                return errorCode!.Value;
+            }
         }
 
-        public static OperationResult<T> Success(T result) => new OperationResult<T>(result, false);
+        public bool IsSuccess => !errorCode.HasValue;
 
-        public static OperationResult<T> Error() => new OperationResult<T>(default, true);
+        private OperationResult([AllowNull]T result, ErrorCode? errorCode)
+        {
+            this.result = result;
+            this.errorCode = errorCode;
+        }
+
+        public static OperationResult<T> Success(T result) => new OperationResult<T>(result, null);
+
+        public static OperationResult<T> Error(ErrorCode errorCode) => new OperationResult<T>(default, errorCode);
     }
 }

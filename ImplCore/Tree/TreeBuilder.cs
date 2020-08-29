@@ -11,7 +11,7 @@ namespace ImplCore.Tree
         private Node<char>? firstRoot;
         private int rootsCount;
 
-        public TreeResult<char> Build(IInputKeeper inputKeeper)
+        public OperationResult<Node<char>?> Build(IInputKeeper inputKeeper)
         {
             InitNewBuild();
             try
@@ -19,7 +19,7 @@ namespace ImplCore.Tree
                 var head = GetStartHead(inputKeeper);
                 if (head == null)
                 {
-                    return TreeResult<char>.Success(head);
+                    return OperationResult<Node<char>?>.Success(head);
                 }
 
                 BuildDown(head, inputKeeper);
@@ -27,15 +27,15 @@ namespace ImplCore.Tree
             }
             catch (TreeBuildException ex)
             {
-                return TreeResult<char>.Error(ex.ErrorCode);
+                return OperationResult<Node<char>?>.Error(ex.ErrorCode);
             }
 
             if (rootsCount > 1)
             {
-                return TreeResult<char>.Error(ErrorCode.MultipleRoots);
+                return OperationResult<Node<char>?>.Error(ErrorCode.MultipleRoots);
             }
 
-            return TreeResult<char>.Success(firstRoot);
+            return OperationResult<Node<char>?>.Success(firstRoot);
         }
 
         private Node<char>? GetStartHead(IInputKeeper inputKeeper)

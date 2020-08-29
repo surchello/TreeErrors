@@ -1,4 +1,5 @@
-﻿using ImplCore.Tree;
+﻿using ImplCore.General;
+using ImplCore.Tree;
 using System.Collections.Generic;
 
 namespace ImplCore.Input
@@ -20,7 +21,7 @@ namespace ImplCore.Input
                 }
                 else
                 {
-                    return OperationResult<List<InputItem>>.Error();
+                    return OperationResult<List<InputItem>>.Error(ErrorCode.InvalidInput);
                 }
             }
 
@@ -45,7 +46,6 @@ namespace ImplCore.Input
 
         private bool ValidateItemInput(string inputItem)
         {
-            //another obvious option is Regex, but I believe manual checking is better here.
             if (inputItem.Length != 5)
             {
                 return false;
