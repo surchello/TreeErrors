@@ -1,10 +1,9 @@
-﻿using ImplCore.General;
+﻿using System;
+using System.Text.RegularExpressions;
+using ImplCore.General;
 using ImplCore.Input;
 using ImplCore.Output;
 using ImplCore.Tree;
-using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace ImplCore
 {
@@ -30,31 +29,31 @@ namespace ImplCore
         {
             try
             {
-                var parseResult = new InputParser().Parse(input);
+                var parseResult = new InputParser<char>(new CharInputItemParser()).Parse(input);
                 if (!parseResult.IsSuccess)
                 {
                     PrintError(parseResult.ErrorCode);
                     return;
                 }
 
-                var inputKeeperResult = InputKeeper.Create(parseResult.Result!);
+                var inputKeeperResult = InputKeeper<char>.Create(parseResult.Result!);
                 if (!inputKeeperResult.IsSuccess)
                 {
                     PrintError(inputKeeperResult.ErrorCode);
                     return;
                 }
 
-                var treeResult = new TreeBuilder().Build(inputKeeperResult.Result!);
+                var treeResult = new TreeBuilder<char>().Build(inputKeeperResult.Result!);
                 if (!treeResult.IsSuccess)
                 {
                     PrintError(treeResult.ErrorCode);
                     return;
                 }
 
-                string printResult = new TreePrinter().ToSExpression(treeResult.Result!);
+                string printResult = new TreePrinter<char>().ToSExpression(treeResult.Result!);
 
                 Console.WriteLine(printResult);
-                Console.WriteLine(new TreePrinter().ToSExpressionIterative(treeResult.Result!));
+                Console.WriteLine(new TreePrinter<char>().ToSExpressionIterative(treeResult.Result!));
             }
             catch (Exception ex)
             {

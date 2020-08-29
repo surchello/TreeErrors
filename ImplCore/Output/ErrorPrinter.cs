@@ -1,7 +1,6 @@
-﻿using ImplCore.General;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using ImplCore.General;
 
 namespace ImplCore.Output
 {

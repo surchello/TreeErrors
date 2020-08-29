@@ -1,6 +1,6 @@
-﻿using ImplCore.General;
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using ImplCore.General;
 
 namespace ImplCore.Tree
 {

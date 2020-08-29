@@ -1,5 +1,5 @@
-﻿using ImplCore.General;
-using System;
+﻿using System;
+using ImplCore.General;
 
 namespace ImplCore.Tree
 {

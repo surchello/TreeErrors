@@ -1,22 +1,23 @@
-﻿using ImplCore.General;
-using ImplCore.Tree;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ImplCore.General;
+using ImplCore.Tree;
 
 namespace ImplCore.Input
 {
-    internal class InputKeeper : IInputKeeper
+    internal class InputKeeper<T> : IInputKeeper<T> where T : notnull, IEquatable<T>//TODO, IComparable<T>
     {
-        private Dictionary<char, char> firstChildren;
-        private Dictionary<char, char> secondChildren;
-        private Dictionary<char, char> primaryParents;
-        private Dictionary<char, IList<char>> additionalParents;
+        private Dictionary<T, T> firstChildren;
+        private Dictionary<T, T> secondChildren;
+        private Dictionary<T, T> primaryParents;
+        private Dictionary<T, IList<T>> additionalParents;
 
-        private InputKeeper(Dictionary<char, char> firstChildren,
-            Dictionary<char, char> secondChildren,
-            Dictionary<char, char> primaryParents,
-            Dictionary<char, IList<char>> additionalParents)
+        private InputKeeper(Dictionary<T, T> firstChildren,
+            Dictionary<T, T> secondChildren,
+            Dictionary<T, T> primaryParents,
+            Dictionary<T, IList<T>> additionalParents)
         {
             this.firstChildren = firstChildren;
             this.secondChildren = secondChildren;
@@ -24,31 +25,31 @@ namespace ImplCore.Input
             this.additionalParents = additionalParents;
     }
 
-        public static OperationResult<InputKeeper> Create(IEnumerable<InputItem> inputItems)
+        public static OperationResult<InputKeeper<T>> Create(IEnumerable<InputItem<T>> inputItems)
         {
-            var firstChildren = new Dictionary<char, char>();
-            var secondChildren = new Dictionary<char, char>();
+            var firstChildren = new Dictionary<T, T>();
+            var secondChildren = new Dictionary<T, T>();
 
-            var primaryParents = new Dictionary<char, char>();
-            var additionalParents = new Dictionary<char, IList<char>>();
+            var primaryParents = new Dictionary<T, T>();
+            var additionalParents = new Dictionary<T, IList<T>>();
 
             foreach (var inputItem in inputItems)
             {
                 ErrorCode? addResult = AddChild(firstChildren, secondChildren, inputItem);
                 if (addResult.HasValue)
                 {
-                    return OperationResult<InputKeeper>.Error(addResult.Value);
+                    return OperationResult<InputKeeper<T>>.Error(addResult.Value);
                 }
 
                 AddParent(primaryParents, additionalParents, inputItem);
             }
 
-            var inputKeeper = new InputKeeper(firstChildren, secondChildren, primaryParents, additionalParents);
+            var inputKeeper = new InputKeeper<T>(firstChildren, secondChildren, primaryParents, additionalParents);
 
-            return OperationResult<InputKeeper>.Success(inputKeeper);
+            return OperationResult<InputKeeper<T>>.Success(inputKeeper);
         }
 
-        public InputItem? GetFirstItem()
+        public InputItem<T>? GetFirstItem()
         {
             if (!firstChildren.Any())
             {
@@ -56,18 +57,18 @@ namespace ImplCore.Input
             }
 
             var firstInput = firstChildren.First();
-            return new InputItem(firstInput.Key, firstInput.Value);
+            return new InputItem<T>(firstInput.Key, firstInput.Value);
         }
 
-        public bool TryGetFirstChild(char parent, out char child) => firstChildren.TryGetValue(parent, out child);
+        public bool TryGetFirstChild(T parent, out T child) => firstChildren.TryGetValue(parent, out child);
 
-        public bool TryGetSecondChild(char parent, out char child) => secondChildren.TryGetValue(parent, out child);
+        public bool TryGetSecondChild(T parent, out T child) => secondChildren.TryGetValue(parent, out child);
 
-        public bool TryGetPrimaryParent(char child, out char parent) => primaryParents.TryGetValue(child, out parent);
+        public bool TryGetPrimaryParent(T child, out T parent) => primaryParents.TryGetValue(child, out parent);
         
-        public bool TryGetAdditionalParents(char child, [MaybeNullWhen(false)] out IEnumerable<char> parents)
+        public bool TryGetAdditionalParents(T child, [MaybeNullWhen(false)] out IEnumerable<T> parents)
         {
-            if (additionalParents.TryGetValue(child, out IList<char>? p))
+            if (additionalParents.TryGetValue(child, out IList<T>? p))
             {
                 parents = p;
                 return true;
@@ -77,9 +78,9 @@ namespace ImplCore.Input
             return false;
         }
 
-        private static ErrorCode? AddChild(Dictionary<char, char> firstChildren,
-            Dictionary<char, char> secondChildren,
-            InputItem inputItem)
+        private static ErrorCode? AddChild(Dictionary<T, T> firstChildren,
+            Dictionary<T, T> secondChildren,
+            InputItem<T> inputItem)
         {
             AddItemResult addResult = AddChild(firstChildren, inputItem);
             if (addResult.IsAdded)
@@ -106,15 +107,15 @@ namespace ImplCore.Input
             return ErrorCode.TooManyChildren;
         }
 
-        private static AddItemResult AddChild(Dictionary<char, char> children, InputItem inputItem)
+        private static AddItemResult AddChild(Dictionary<T, T> children, InputItem<T> inputItem)
         {
-            if (!children.TryGetValue(inputItem.Parent, out char existingChild))
+            if (!children.TryGetValue(inputItem.Parent, out T existingChild))
             {
                 children.Add(inputItem.Parent, inputItem.Child);
                 return AddItemResult.Added();
             }
 
-            if (existingChild == inputItem.Child)
+            if (existingChild.Equals(inputItem.Child))
             {
                 return AddItemResult.Error(ErrorCode.DuplicatePair);
             }
@@ -122,19 +123,19 @@ namespace ImplCore.Input
             return AddItemResult.NotAdded();
         }
 
-        private static void AddParent(Dictionary<char, char> primaryParents,
-            Dictionary<char, IList<char>> additionalParents,
-            InputItem inputItem)
+        private static void AddParent(Dictionary<T, T> primaryParents,
+            Dictionary<T, IList<T>> additionalParents,
+            InputItem<T> inputItem)
         {
             if (!primaryParents.TryAdd(inputItem.Child, inputItem.Parent))
             {
-                if (additionalParents.TryGetValue(inputItem.Child, out IList<char>? parents))
+                if (additionalParents.TryGetValue(inputItem.Child, out IList<T>? parents))
                 {
                     parents.Add(inputItem.Parent);
                 }
                 else
                 {
-                    parents = new List<char> { inputItem.Parent };
+                    parents = new List<T> { inputItem.Parent };
                     additionalParents.Add(inputItem.Child, parents);
                 }
             }

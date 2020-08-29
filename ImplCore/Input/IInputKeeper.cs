@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ImplCore.Input
 {
-    public interface IInputKeeper
+    public interface IInputKeeper<T> where T: notnull, IEquatable<T>//TODO, IComparable<T>
     {
-        //NodeValues? GetFirstItem();
+        InputItem<T>? GetFirstItem();
 
-        //NodeValues? GetByParent(char parent);
+        bool TryGetFirstChild(T parent, out T child);
 
-        //List<NodeValues> GetByChild(char child);
+        bool TryGetSecondChild(T parent, out T child);
 
-        Input.InputItem? GetFirstItem();
+        bool TryGetPrimaryParent(T child, out T parent);
 
-        bool TryGetFirstChild(char parent, out char child);
-
-        bool TryGetSecondChild(char parent, out char child);
-
-        bool TryGetPrimaryParent(char child, out char parent);
-
-        bool TryGetAdditionalParents(char child, out IEnumerable<char> parents);
+        bool TryGetAdditionalParents(T child, out IEnumerable<T> parents);
     }
 }

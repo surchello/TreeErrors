@@ -1,13 +1,12 @@
-﻿using ImplCore.Tree;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
+using ImplCore.Tree;
 
 namespace ImplCore.Output
 {
-    internal class TreePrinter
+    internal class TreePrinter<T> where T : notnull
     {
-        public string ToSExpression(Node<char>? head)
+        public string ToSExpression(Node<T>? head)
         {
             if (head == null)
             {
@@ -20,7 +19,7 @@ namespace ImplCore.Output
             return $"({head.Value}{left}{right})";
         }
 
-        public string ToSExpressionIterative(Node<char>? head)
+        public string ToSExpressionIterative(Node<T>? head)
         {
             var res = new StringBuilder();
             var stack = new Stack<StackItem>();
@@ -69,10 +68,10 @@ namespace ImplCore.Output
 
         private readonly struct StackItem
         {
-            public Node<char> Node { get; }
+            public Node<T> Node { get; }
             public int Level { get; }
 
-            public StackItem(Node<char> node, int level)
+            public StackItem(Node<T> node, int level)
             {
                 Node = node;
                 Level = level;

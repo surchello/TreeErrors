@@ -1,17 +1,17 @@
-﻿using ImplCore.General;
-using ImplCore.Input;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using ImplCore.General;
+using ImplCore.Input;
 
 namespace ImplCore.Tree
 {
-    public class TreeBuilder//TODO: char generic?
+    public class TreeBuilder<T> where T : notnull, IEquatable<T>, IComparable<T>
     {
-        private HashSet<char>? processedValues;
-        private Node<char>? firstRoot;
+        private HashSet<T>? processedValues;
+        private Node<T>? firstRoot;
         private int rootsCount;
 
-        public OperationResult<Node<char>?> Build(IInputKeeper inputKeeper)
+        public OperationResult<Node<T>?> Build(IInputKeeper<T> inputKeeper)
         {
             InitNewBuild();
             try
@@ -19,7 +19,7 @@ namespace ImplCore.Tree
                 var head = GetStartHead(inputKeeper);
                 if (head == null)
                 {
-                    return OperationResult<Node<char>?>.Success(head);
+                    return OperationResult<Node<T>?>.Success(head);
                 }
 
                 BuildDown(head, inputKeeper);
@@ -27,26 +27,26 @@ namespace ImplCore.Tree
             }
             catch (TreeBuildException ex)
             {
-                return OperationResult<Node<char>?>.Error(ex.ErrorCode);
+                return OperationResult<Node<T>?>.Error(ex.ErrorCode);
             }
 
             if (rootsCount > 1)
             {
-                return OperationResult<Node<char>?>.Error(ErrorCode.MultipleRoots);
+                return OperationResult<Node<T>?>.Error(ErrorCode.MultipleRoots);
             }
 
-            return OperationResult<Node<char>?>.Success(firstRoot);
+            return OperationResult<Node<T>?>.Success(firstRoot);
         }
 
-        private Node<char>? GetStartHead(IInputKeeper inputKeeper)
+        private Node<T>? GetStartHead(IInputKeeper<T> inputKeeper)
         {
-            Input.InputItem? firstItem = inputKeeper.GetFirstItem();
+            Input.InputItem<T>? firstItem = inputKeeper.GetFirstItem();
             if (!firstItem.HasValue)
             {
                 return null;
             }
 
-            var head = new Node<char>(firstItem.Value.Parent);
+            var head = new Node<T>(firstItem.Value.Parent);
             if (!TrySaveToProcessed(head.Value))
             {
                 throw new Exception($"First item is already processed.");
@@ -55,9 +55,9 @@ namespace ImplCore.Tree
             return head;
         }
 
-        private void BuildUp(Node<char> head, IInputKeeper inputKeeper)
+        private void BuildUp(Node<T> head, IInputKeeper<T> inputKeeper)
         {
-            if (!inputKeeper.TryGetPrimaryParent(head.Value, out char parent))
+            if (!inputKeeper.TryGetPrimaryParent(head.Value, out T parent))
             {
                 //this method could return a collection of roots but we don't need  to know all of them
                 //what we need to know is whether there is only one head. If yes we need a reference to that head.
@@ -69,7 +69,7 @@ namespace ImplCore.Tree
 
             var newHead = ProcessParent(parent, head, inputKeeper);
 
-            if (inputKeeper.TryGetAdditionalParents(head.Value, out IEnumerable<char> additionalParents))
+            if (inputKeeper.TryGetAdditionalParents(head.Value, out IEnumerable<T> additionalParents))
             {
                 //it's multiple heads but loop is still possible. We have to continue to determine what it is.
                 foreach (var additionalParent in additionalParents)
@@ -78,53 +78,33 @@ namespace ImplCore.Tree
                 }
             }
 
-            Node<char> ProcessParent(char parentValue, Node<char> oldHead, IInputKeeper inputKeeper)
+            Node<T> ProcessParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
             {
                 var newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
                 BuildUp(newHead, inputKeeper);
 
                 return newHead;
             }
-
-            #region old parents
-            //var parents = inputKeeper.GetByChild(head.Value);
-            //if (!parents.Any())
-            //{
-            //    //TODO: Maybe just push it to global "heads collection"?
-            //    //Currently parentRoots are uselessly copied on every run of BuildUp.
-            //    return new List<Node<char>> { head };
-            //}
-
-            //var roots = new List<Node<char>>(parents.Count);
-
-            //foreach (var parent in parents)//it's either multiple heads or loop. Continue to determine what it is.
-            //{
-            //    head = AttachNewHeadDeep(parent, head, inputKeeper);
-            //    var parentRoots = BuildUp(head, inputKeeper);
-
-            //    roots.AddRange(parentRoots);
-            //}
-            #endregion
         }
 
-        private Node<char> AttachNewHeadDeep(char newHeadValue, Node<char> oldHead, IInputKeeper inputKeeper)
+        private Node<T> AttachNewHeadDeep(T newHeadValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
         {
-            bool isFirstFound = inputKeeper.TryGetFirstChild(newHeadValue, out char firstChild);
+            bool isFirstFound = inputKeeper.TryGetFirstChild(newHeadValue, out T firstChild);
             if (!isFirstFound)
             {
                 throw new Exception($"Children not found for value {newHeadValue}. At least one is expected: {oldHead.Value}");
             }
 
-            Node<char> newHead;
+            Node<T> newHead;
 
-            bool isSecondFound = inputKeeper.TryGetSecondChild(newHeadValue, out char secondChild);
+            bool isSecondFound = inputKeeper.TryGetSecondChild(newHeadValue, out T secondChild);
             if (!isSecondFound)
             {
                 newHead = AttachParent(newHeadValue, oldHead, isLeft: true);
                 return newHead;
             }
 
-            char otherChildValue = oldHead.Value == firstChild ? firstChild : secondChild;
+            T otherChildValue = oldHead.Value.Equals(firstChild) ? firstChild : secondChild;
             bool isOldHeadLeft = IsFirstLeft(oldHead.Value, otherChildValue);
 
             newHead = AttachParent(newHeadValue, oldHead, isOldHeadLeft);
@@ -135,10 +115,10 @@ namespace ImplCore.Tree
             return newHead;
         }
 
-        private void BuildDown(Node<char> head, IInputKeeper inputKeeper)
+        private void BuildDown(Node<T> head, IInputKeeper<T> inputKeeper)
         {
-            bool isFirstFound = inputKeeper.TryGetFirstChild(head.Value, out char firstChild);
-            bool isSecondFound = inputKeeper.TryGetSecondChild(head.Value, out char secondChild);
+            bool isFirstFound = inputKeeper.TryGetFirstChild(head.Value, out T firstChild);
+            bool isSecondFound = inputKeeper.TryGetSecondChild(head.Value, out T secondChild);
             if (!isFirstFound && !isSecondFound)
             {
                 return;
@@ -159,7 +139,7 @@ namespace ImplCore.Tree
             }
         }
 
-        private Node<char> AttachChild(Node<char> parentNode, char childValue, bool isLeft)
+        private Node<T> AttachChild(Node<T> parentNode, T childValue, bool isLeft)
         {
             if (!TrySaveToProcessed(childValue))
             {
@@ -168,11 +148,11 @@ namespace ImplCore.Tree
                 //1. we save on allocation/copying result for each node.
                 //2. the code using this method looks simpler
                 //3. it's intented to be used inside class only. Public methods return result object.
-                //So, exception here is just a convinient way to transfer an error
+                //So, exception here is just a convinient way to transfer an error up the call stack
                 throw new TreeBuildException(General.ErrorCode.Cycle);
             }
 
-            var childNode = new Node<char>(childValue);
+            var childNode = new Node<T>(childValue);
 
             if (isLeft)
             {
@@ -186,14 +166,14 @@ namespace ImplCore.Tree
             return childNode;
         }
 
-        private Node<char> AttachParent(char parentValue, Node<char> childNode, bool isLeft)
+        private Node<T> AttachParent(T parentValue, Node<T> childNode, bool isLeft)
         {
             if (!TrySaveToProcessed(parentValue))
             {
                 throw new TreeBuildException(General.ErrorCode.Cycle);
             }
 
-            var newHead = new Node<char>(parentValue);
+            var newHead = new Node<T>(parentValue);
 
             if (isLeft)
             {
@@ -207,7 +187,7 @@ namespace ImplCore.Tree
             return newHead;
         }
 
-        private bool TrySaveToProcessed(char value)
+        private bool TrySaveToProcessed(T value)
         {
             //false if the element is already processed.
             return (processedValues ?? throw new NullReferenceException($"{nameof(processedValues)}"))
@@ -216,11 +196,11 @@ namespace ImplCore.Tree
 
         private void InitNewBuild()
         {
-            processedValues = new HashSet<char>();
+            processedValues = new HashSet<T>();
             firstRoot = null;
             rootsCount = 0;
         }
 
-        private bool IsFirstLeft(char first, char second) => first < second;
+        private bool IsFirstLeft(T first, T second) => first.CompareTo(second) < 0;
     }
 }

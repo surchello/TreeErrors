@@ -1,76 +1,72 @@
-﻿using ImplCore.General;
+﻿using System.Collections.Generic;
+using ImplCore.General;
 using ImplCore.Tree;
-using System.Collections.Generic;
 
 namespace ImplCore.Input
 {
-    internal class InputParser
+    internal class InputParser<T> where T : notnull
     {
-        private const string itemDelimiter = " ";
+        private readonly IInputItemParser<T> inputItemParser;
 
-        public OperationResult<List<InputItem>> Parse(string input)
+        public InputParser(IInputItemParser<T> inputItemParser)
         {
-            string[] rawItems = input.Split(itemDelimiter);
-            var result = new List<InputItem>(rawItems.Length);
+            this.inputItemParser = inputItemParser;
+        }
+
+        public OperationResult<List<InputItem<T>>> Parse(string input)
+        {
+            string[] rawItems = input.Split(" ");
+            var result = new List<InputItem<T>>(rawItems.Length);
 
             foreach(string rawItem in rawItems)
             {
-                if (TryParseInputItem(rawItem, out InputItem parsedItem))
+                if (TryParseInputItem(rawItem, out InputItem<T> parsedItem))
                 {
                     result.Add(parsedItem);
                 }
                 else
                 {
-                    return OperationResult<List<InputItem>>.Error(ErrorCode.InvalidInput);
+                    return OperationResult<List<InputItem<T>>>.Error(ErrorCode.InvalidInput);
                 }
             }
 
-            return OperationResult<List<InputItem>>.Success(result);
+            return OperationResult<List<InputItem<T>>>.Success(result);
         }
 
-        private bool TryParseInputItem(string inputItem, out InputItem result)
+        private bool TryParseInputItem(string inputItem, out InputItem<T> result)
         {
-            if (!ValidateItemInput(inputItem))
+            result = default;
+
+            if (inputItem[0] != '(' || inputItem[inputItem.Length - 1] != ')')
             {
-                result = default;
                 return false;
             }
 
-            char parent = GetFirstItem(inputItem);
-            char child = GetSecondItem(inputItem);
+            int separatorPosition = inputItem.IndexOf(',');
+            if (separatorPosition < 0)
+            {
+                return false;
+            }
 
-            result = new InputItem(parent, child);
+            string firstItem = inputItem.Substring(0, separatorPosition);
+            string secondItem = inputItem.Substring(separatorPosition + 1, (inputItem.Length - 1) - separatorPosition);
+
+            if (!inputItemParser.TryExtractItem(firstItem, out T first))
+            {
+                return false;
+            }
+
+            if (!inputItemParser.TryExtractItem(secondItem, out T second))
+            {
+                return false;
+            }
+
+            result = new InputItem<T>(first, second);
 
             return true;
         }
 
-        private bool ValidateItemInput(string inputItem)
-        {
-            if (inputItem.Length != 5)
-            {
-                return false;
-            }
-
-            if (inputItem[0] != '(' || inputItem[2] != ',' || inputItem[inputItem.Length - 1] != ')')
-            {
-                return false;
-            }
-
-            char parent = GetFirstItem(inputItem);
-            char child = GetSecondItem(inputItem);
-
-            if (!char.IsUpper(parent) || !char.IsUpper(child))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private char GetFirstItem(string inputItem) => inputItem[1];
-        private char GetSecondItem(string inputItem) => inputItem[3];
-
-        //private InputItem ValidateItemInputRegex(string inputItem)//TODO: delete
+        //private InputItem ValidateItemInputRegex(string inputItem)
         //{
         //    var parseResult = Regex.Match(inputItem, @"^\(([A-Z]{1}),([A-Z]{1})\)$");
         //    if (!parseResult.Success)

@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ImplCore.Input
+﻿namespace ImplCore.Input
 {
-    public readonly struct InputItem
+    public readonly struct InputItem<T> where T: notnull
     {
-        public char Parent { get; }
-        public char Child { get; }
+        public T Parent { get; }
+        public T Child { get; }
 
-        public InputItem(char parent, char child)
+        public InputItem(T parent, T child)
         {
             Parent = parent;
             Child = child;
