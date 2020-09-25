@@ -28,7 +28,7 @@ namespace ImplCore.Tree
         {
             get
             {
-                if (!IsSuccess)
+                if (IsSuccess)
                 {
                     throw new Exception($"Failed to return errorCode since there is no error.");
                 }

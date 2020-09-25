@@ -7,7 +7,7 @@ using ImplCore.Tree;
 
 namespace ImplCore.Input
 {
-    internal class InputKeeper<T> : IInputKeeper<T> where T : notnull, IEquatable<T>//TODO, IComparable<T>
+    internal class InputKeeper<T> : IInputKeeper<T> where T : notnull, IEquatable<T>
     {
         private Dictionary<T, T> firstChildren;
         private Dictionary<T, T> secondChildren;

@@ -16,7 +16,7 @@ namespace ImplCore.Tree
             InitNewBuild();
             try
             {
-                var head = GetStartHead(inputKeeper);
+                Node<T>? head = GetStartHead(inputKeeper);
                 if (head == null)
                 {
                     return OperationResult<Node<T>?>.Success(head);
@@ -40,7 +40,7 @@ namespace ImplCore.Tree
 
         private Node<T>? GetStartHead(IInputKeeper<T> inputKeeper)
         {
-            Input.InputItem<T>? firstItem = inputKeeper.GetFirstItem();
+            InputItem<T>? firstItem = inputKeeper.GetFirstItem();
             if (!firstItem.HasValue)
             {
                 return null;
@@ -67,7 +67,7 @@ namespace ImplCore.Tree
                 return;
             }
 
-            var newHead = ProcessParent(parent, head, inputKeeper);
+            Node<T> newHead = ProcessParent(parent, head, inputKeeper);
 
             if (inputKeeper.TryGetAdditionalParents(head.Value, out IEnumerable<T> additionalParents))
             {
@@ -80,7 +80,7 @@ namespace ImplCore.Tree
 
             Node<T> ProcessParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
             {
-                var newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
+                Node<T> newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
                 BuildUp(newHead, inputKeeper);
 
                 return newHead;
@@ -108,7 +108,7 @@ namespace ImplCore.Tree
             bool isOldHeadLeft = IsFirstLeft(oldHead.Value, otherChildValue);
 
             newHead = AttachParent(newHeadValue, oldHead, isOldHeadLeft);
-            var otherChildNode = AttachChild(newHead, otherChildValue, !isOldHeadLeft);
+            Node<T> otherChildNode = AttachChild(newHead, otherChildValue, !isOldHeadLeft);
 
             BuildDown(otherChildNode, inputKeeper);
 
@@ -127,7 +127,7 @@ namespace ImplCore.Tree
             if (isFirstFound)
             {
                 bool isLeft = !isSecondFound || IsFirstLeft(firstChild, secondChild);
-                var childNode = AttachChild(head, firstChild, isLeft);
+                Node<T> childNode = AttachChild(head, firstChild, isLeft);
                 BuildDown(childNode, inputKeeper);
             }
 
@@ -147,9 +147,9 @@ namespace ImplCore.Tree
                 //why exception here?
                 //1. we save on allocation/copying result for each node.
                 //2. the code using this method looks simpler
-                //3. it's intented to be used inside class only. Public methods return result object.
+                //3. it's intented to be private. Public methods return result object.
                 //So, exception here is just a convinient way to transfer an error up the call stack
-                throw new TreeBuildException(General.ErrorCode.Cycle);
+                throw new TreeBuildException(ErrorCode.Cycle);
             }
 
             var childNode = new Node<T>(childValue);
@@ -170,7 +170,7 @@ namespace ImplCore.Tree
         {
             if (!TrySaveToProcessed(parentValue))
             {
-                throw new TreeBuildException(General.ErrorCode.Cycle);
+                throw new TreeBuildException(ErrorCode.Cycle);
             }
 
             var newHead = new Node<T>(parentValue);

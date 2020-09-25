@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ImplCore.Input
 {
-    public interface IInputKeeper<T> where T: notnull, IEquatable<T>//TODO, IComparable<T>
+    public interface IInputKeeper<T> where T: notnull, IEquatable<T>
     {
         InputItem<T>? GetFirstItem();
 
