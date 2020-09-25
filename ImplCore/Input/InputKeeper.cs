@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using ImplCore.General;
 using ImplCore.Tree;
@@ -60,22 +59,44 @@ namespace ImplCore.Input
             return new InputItem<T>(firstInput.Key, firstInput.Value);
         }
 
-        public bool TryGetFirstChild(T parent, out T child) => firstChildren.TryGetValue(parent, out child);
-
-        public bool TryGetSecondChild(T parent, out T child) => secondChildren.TryGetValue(parent, out child);
-
-        public bool TryGetPrimaryParent(T child, out T parent) => primaryParents.TryGetValue(child, out parent);
-        
-        public bool TryGetAdditionalParents(T child, [MaybeNullWhen(false)] out IEnumerable<T> parents)
+        public SearchItemResult<T> GetFirstChild(T parent)
         {
-            if (additionalParents.TryGetValue(child, out IList<T>? p))
+            if (firstChildren.TryGetValue(parent, out T child))
             {
-                parents = p;
-                return true;
+                return SearchItemResult<T>.Success(child);
             }
 
-            parents = default;
-            return false;
+            return SearchItemResult<T>.Failed();
+        }
+
+        public SearchItemResult<T> GetSecondChild(T parent)
+        {
+            if (secondChildren.TryGetValue(parent, out T child))
+            {
+                return SearchItemResult<T>.Success(child);
+            }
+
+            return SearchItemResult<T>.Failed();
+        }
+
+        public SearchItemResult<T> GetPrimaryParent(T child)
+        {
+            if (primaryParents.TryGetValue(child, out T parent))
+            {
+                return SearchItemResult<T>.Success(parent);
+            }
+
+            return SearchItemResult<T>.Failed();
+        }
+        
+        public SearchItemResult<IEnumerable<T>> GetAdditionalParents(T child)
+        {
+            if (additionalParents.TryGetValue(child, out IList<T>? parents))
+            {
+                return SearchItemResult<IEnumerable<T>>.Success(parents);
+            }
+
+            return SearchItemResult<IEnumerable<T>>.Failed();
         }
 
         private static ErrorCode? AddChild(Dictionary<T, T> firstChildren,

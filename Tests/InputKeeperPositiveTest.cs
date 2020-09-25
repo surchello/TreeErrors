@@ -20,9 +20,13 @@ namespace Tests
 
             var inputKeeper = inputKeeperResult.Result!;
 
-            var isFirstFound = inputKeeper.TryGetFirstChild('A', out char firstChild);
-            Assert.True(isFirstFound);
-            Assert.Equal('B', firstChild);
+            var firstResult = inputKeeper.GetFirstChild('A');
+            Assert.True(firstResult.IsSuccess);
+            Assert.Equal('B', firstResult.Result);
+
+            var secondResult = inputKeeper.GetFirstChild('C');
+            Assert.True(secondResult.IsSuccess);
+            Assert.Equal('D', secondResult.Result);
         }
 
         [Fact]
@@ -35,13 +39,13 @@ namespace Tests
 
             var inputKeeper = InputKeeper<char>.Create(items).Result!;
 
-            var isFirstFound = inputKeeper.TryGetFirstChild('A', out char firstChild);
-            Assert.True(isFirstFound);
-            Assert.Equal('B', firstChild);
+            var firstResult = inputKeeper.GetFirstChild('A');
+            Assert.True(firstResult.IsSuccess);
+            Assert.Equal('B', firstResult.Result);
 
-            var isSecondFound = inputKeeper.TryGetSecondChild('A', out char secondChild);
-            Assert.True(isSecondFound);
-            Assert.Equal('D', secondChild);
+            var secondResult = inputKeeper.GetSecondChild('A');
+            Assert.True(secondResult.IsSuccess);
+            Assert.Equal('D', secondResult.Result);
         }
 
         [Fact]
@@ -53,12 +57,12 @@ namespace Tests
 
             var inputKeeper = InputKeeper<char>.Create(items).Result!;
 
-            var isFirstFound = inputKeeper.TryGetFirstChild('A', out char firstChild);
-            Assert.True(isFirstFound);
-            Assert.Equal('B', firstChild);
+            var firstResult = inputKeeper.GetFirstChild('A');
+            Assert.True(firstResult.IsSuccess);
+            Assert.Equal('B', firstResult.Result);
 
-            var isSecondFound = inputKeeper.TryGetSecondChild('A', out char secondChild);
-            Assert.False(isSecondFound);
+            var secondResult = inputKeeper.GetSecondChild('A');
+            Assert.False(secondResult.IsSuccess);
         }
 
         [Fact]
@@ -85,9 +89,9 @@ namespace Tests
 
             var inputKeeper = InputKeeper<char>.Create(items).Result!;
 
-            var isParentFound = inputKeeper.TryGetPrimaryParent('B', out char parent);
-            Assert.True(isParentFound);
-            Assert.Equal('A', parent);
+            var parentResult = inputKeeper.GetPrimaryParent('B');
+            Assert.True(parentResult.IsSuccess);
+            Assert.Equal('A', parentResult.Result);
         }
 
         [Fact]
@@ -101,11 +105,11 @@ namespace Tests
 
             var inputKeeper = InputKeeper<char>.Create(items).Result!;
 
-            var isParentsFound = inputKeeper.TryGetAdditionalParents('B', out IEnumerable<char>? parents);
-            Assert.True(isParentsFound);
-            Assert.Equal(2, parents.Count());
-            Assert.Contains('C', parents);
-            Assert.Contains('D', parents);
+            var parentsResult = inputKeeper.GetAdditionalParents('B');
+            Assert.True(parentsResult.IsSuccess);
+            Assert.Equal(2, parentsResult.Result.Count());
+            Assert.Contains('C', parentsResult.Result);
+            Assert.Contains('D', parentsResult.Result);
         }
 
         [Fact]
@@ -118,8 +122,8 @@ namespace Tests
 
             var inputKeeper = InputKeeper<char>.Create(items).Result!;
 
-            var isParentsFound = inputKeeper.TryGetAdditionalParents('B', out IEnumerable<char>? parents);
-            Assert.False(isParentsFound);
+            var parentsResult = inputKeeper.GetAdditionalParents('B');
+            Assert.False(parentsResult.IsSuccess);
         }
     }
 }

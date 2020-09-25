@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImplCore.Tree;
+using System;
 using System.Collections.Generic;
 
 namespace ImplCore.Input
@@ -7,12 +8,12 @@ namespace ImplCore.Input
     {
         InputItem<T>? GetFirstItem();
 
-        bool TryGetFirstChild(T parent, out T child);
+        SearchItemResult<T> GetFirstChild(T parent);
 
-        bool TryGetSecondChild(T parent, out T child);
+        SearchItemResult<T> GetSecondChild(T parent);
 
-        bool TryGetPrimaryParent(T child, out T parent);
+        SearchItemResult<T> GetPrimaryParent(T child);
 
-        bool TryGetAdditionalParents(T child, out IEnumerable<T> parents);
+        SearchItemResult<IEnumerable<T>> GetAdditionalParents(T child);
     }
 }
