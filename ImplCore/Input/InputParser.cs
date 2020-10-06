@@ -48,8 +48,8 @@ namespace ImplCore.Input
                 return false;
             }
 
-            string firstItem = inputItem.Substring(0, separatorPosition);
-            string secondItem = inputItem.Substring(separatorPosition + 1, (inputItem.Length - 1) - separatorPosition);
+            string firstItem = inputItem.Substring(1, separatorPosition - 1);
+            string secondItem = inputItem.Substring(separatorPosition + 1, (inputItem.Length - 1) - (separatorPosition + 1));
 
             if (!inputItemParser.TryExtractItem(firstItem, out T first))
             {

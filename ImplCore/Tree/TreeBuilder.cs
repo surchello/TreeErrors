@@ -59,7 +59,7 @@ namespace ImplCore.Tree
         {
             if (!inputKeeper.TryGetPrimaryParent(head.Value, out T parent))
             {
-                //this method could return a collection of roots but we don't need  to know all of them
+                //this method could return a collection of roots but we don't need to know all of them
                 //what we need to know is whether there is only one head. If yes we need a reference to that head.
                 firstRoot ??= head;
                 rootsCount++;
@@ -67,24 +67,28 @@ namespace ImplCore.Tree
                 return;
             }
 
-            Node<T> newHead = ProcessParent(parent, head, inputKeeper);
+            ProcessParent(parent, head, inputKeeper);
+            BuildChildUp(head, inputKeeper);
+        }
 
-            if (inputKeeper.TryGetAdditionalParents(head.Value, out IEnumerable<T> additionalParents))
+        private void BuildChildUp(Node<T> childNode, IInputKeeper<T> inputKeeper)
+        {
+            if (inputKeeper.TryGetAdditionalParents(childNode.Value, out IEnumerable<T> additionalParents))
             {
-                //it's multiple heads but loop is still possible. We have to continue to determine what it is.
+                //there're multiple heads but loop is still possible. We have to continue to determine what it is.
                 foreach (var additionalParent in additionalParents)
                 {
-                    ProcessParent(additionalParent, newHead, inputKeeper);
+                    ProcessParent(additionalParent, childNode, inputKeeper);
                 }
             }
+        }
 
-            Node<T> ProcessParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
-            {
-                Node<T> newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
-                BuildUp(newHead, inputKeeper);
+        private Node<T> ProcessParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
+        {
+            Node<T> newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
+            BuildUp(newHead, inputKeeper);
 
-                return newHead;
-            }
+            return newHead;
         }
 
         private Node<T> AttachNewHeadDeep(T newHeadValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
@@ -129,13 +133,15 @@ namespace ImplCore.Tree
                 bool isLeft = !isSecondFound || IsFirstLeft(firstChild, secondChild);
                 Node<T> childNode = AttachChild(head, firstChild, isLeft);
                 BuildDown(childNode, inputKeeper);
+                BuildChildUp(childNode, inputKeeper);
             }
 
             if (isSecondFound)
             {
                 bool isLeft = !isFirstFound || IsFirstLeft(secondChild, firstChild);
-                var childNode = AttachChild(head, secondChild, isLeft);
+                Node<T> childNode = AttachChild(head, secondChild, isLeft);
                 BuildDown(childNode, inputKeeper);
+                BuildChildUp(childNode, inputKeeper);
             }
         }
 
