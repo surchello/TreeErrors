@@ -67,6 +67,33 @@ namespace Tests
         }
 
         [Fact]
+        public void SuccessStartFromBottom()
+        {
+            var items = new InputItem<char>[] {
+                new InputItem<char>('D', 'E'),
+                new InputItem<char>('A', 'B'),
+                new InputItem<char>('A', 'C'),
+                new InputItem<char>('B', 'D')
+            };
+            var treeResult = GetTreeResult(items);
+
+            Assert.True(treeResult.IsSuccess);
+            Assert.NotNull(treeResult.Result);
+
+            var head = treeResult.Result!;
+
+            Assert.Equal('A', head.Value);
+
+            Assert.NotNull(head.Left);
+            Assert.Equal('B', head.Left!.Value);
+            Assert.NotNull(head.Left!.Left);
+            Assert.Null(head.Left!.Right);
+            Assert.Equal('D', head.Left!.Left!.Value);
+            Assert.NotNull(head.Left!.Left!.Left);
+            Assert.Equal('E', head.Left!.Left!.Left!.Value);
+        }
+
+        [Fact]
         public void SelfNodeCycle()
         {
             var items = new InputItem<char>[] {
@@ -101,10 +128,23 @@ namespace Tests
             var items = new InputItem<char>[] {
                 new InputItem<char>('A', 'B'),
                 new InputItem<char>('A', 'C'),
-                //new InputItem<char>('B', 'D'),
-                //new InputItem<char>('B', 'E'),
-                //new InputItem<char>('K', 'D')
                 new InputItem<char>('K', 'B')
+            };
+            var treeResult = GetTreeResult(items);
+
+            Assert.False(treeResult.IsSuccess);
+            Assert.Equal(ErrorCode.MultipleRoots, treeResult.ErrorCode);
+        }
+
+        [Fact]
+        public void MultipleRootsStartFromMiddle()
+        {
+            var items = new InputItem<char>[] {
+                new InputItem<char>('A', 'B'),
+                new InputItem<char>('A', 'C'),
+                new InputItem<char>('D', 'A'),
+                new InputItem<char>('D', 'E'),
+                new InputItem<char>('K', 'E')
             };
             var treeResult = GetTreeResult(items);
 

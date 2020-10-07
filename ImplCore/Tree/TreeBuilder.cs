@@ -57,7 +57,7 @@ namespace ImplCore.Tree
 
         private void BuildUp(Node<T> head, IInputKeeper<T> inputKeeper)
         {
-            if (!inputKeeper.TryGetPrimaryParent(head.Value, out T parent))
+            if (!inputKeeper.TryGetPrimaryParent(head.Value, out T parentValue))
             {
                 //this method could return a collection of roots but we don't need to know all of them
                 //what we need to know is whether there is only one head. If yes we need a reference to that head.
@@ -67,28 +67,57 @@ namespace ImplCore.Tree
                 return;
             }
 
-            ProcessParent(parent, head, inputKeeper);
-            BuildChildUp(head, inputKeeper);
+            BuildParent(parentValue, head, inputKeeper);
+            BuildAdditionalParents(head, inputKeeper);
         }
 
-        private void BuildChildUp(Node<T> childNode, IInputKeeper<T> inputKeeper)
+        private void BuildDown(Node<T> head, IInputKeeper<T> inputKeeper)
         {
-            if (inputKeeper.TryGetAdditionalParents(childNode.Value, out IEnumerable<T> additionalParents))
+            bool isFirstFound = inputKeeper.TryGetFirstChild(head.Value, out T firstChild);
+            bool isSecondFound = inputKeeper.TryGetSecondChild(head.Value, out T secondChild);
+            if (!isFirstFound && !isSecondFound)
             {
-                //there're multiple heads but loop is still possible. We have to continue to determine what it is.
-                foreach (var additionalParent in additionalParents)
-                {
-                    ProcessParent(additionalParent, childNode, inputKeeper);
-                }
+                return;
+            }
+
+            if (isFirstFound)
+            {
+                bool isLeft = !isSecondFound || IsFirstLeft(firstChild, secondChild);
+                BuildChild(head, firstChild, isLeft, inputKeeper);
+            }
+
+            if (isSecondFound)
+            {
+                bool isLeft = !isFirstFound || IsFirstLeft(secondChild, firstChild);
+                BuildChild(head, secondChild, isLeft, inputKeeper);
             }
         }
 
-        private Node<T> ProcessParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
+        private void BuildChild(Node<T> parent, T childValue, bool isLeft, IInputKeeper<T> inputKeeper)
+        {
+            Node<T> childNode = AttachChild(parent, childValue, isLeft);
+            BuildDown(childNode, inputKeeper);
+            BuildAdditionalParents(childNode, inputKeeper);
+        }
+
+        private Node<T> BuildParent(T parentValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
         {
             Node<T> newHead = AttachNewHeadDeep(parentValue, oldHead, inputKeeper);
             BuildUp(newHead, inputKeeper);
 
             return newHead;
+        }
+
+        private void BuildAdditionalParents(Node<T> child, IInputKeeper<T> inputKeeper)
+        {
+            if (inputKeeper.TryGetAdditionalParents(child.Value, out IEnumerable<T> additionalParents))
+            {
+                //there're multiple heads but loop is still possible. We have to continue to determine what it is.
+                foreach (var additionalParent in additionalParents)
+                {
+                    BuildParent(additionalParent, child, inputKeeper);
+                }
+            }
         }
 
         private Node<T> AttachNewHeadDeep(T newHeadValue, Node<T> oldHead, IInputKeeper<T> inputKeeper)
@@ -108,41 +137,14 @@ namespace ImplCore.Tree
                 return newHead;
             }
 
-            T otherChildValue = oldHead.Value.Equals(firstChild) ? firstChild : secondChild;
+            T otherChildValue = oldHead.Value.Equals(firstChild) ? secondChild : firstChild;
             bool isOldHeadLeft = IsFirstLeft(oldHead.Value, otherChildValue);
 
             newHead = AttachParent(newHeadValue, oldHead, isOldHeadLeft);
-            Node<T> otherChildNode = AttachChild(newHead, otherChildValue, !isOldHeadLeft);
 
-            BuildDown(otherChildNode, inputKeeper);
+            BuildChild(newHead, otherChildValue, !isOldHeadLeft, inputKeeper);
 
             return newHead;
-        }
-
-        private void BuildDown(Node<T> head, IInputKeeper<T> inputKeeper)
-        {
-            bool isFirstFound = inputKeeper.TryGetFirstChild(head.Value, out T firstChild);
-            bool isSecondFound = inputKeeper.TryGetSecondChild(head.Value, out T secondChild);
-            if (!isFirstFound && !isSecondFound)
-            {
-                return;
-            }
-
-            if (isFirstFound)
-            {
-                bool isLeft = !isSecondFound || IsFirstLeft(firstChild, secondChild);
-                Node<T> childNode = AttachChild(head, firstChild, isLeft);
-                BuildDown(childNode, inputKeeper);
-                BuildChildUp(childNode, inputKeeper);
-            }
-
-            if (isSecondFound)
-            {
-                bool isLeft = !isFirstFound || IsFirstLeft(secondChild, firstChild);
-                Node<T> childNode = AttachChild(head, secondChild, isLeft);
-                BuildDown(childNode, inputKeeper);
-                BuildChildUp(childNode, inputKeeper);
-            }
         }
 
         private Node<T> AttachChild(Node<T> parentNode, T childValue, bool isLeft)
